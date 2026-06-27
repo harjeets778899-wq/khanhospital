@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khan Hospital – Advanced Healthcare For Your Family</title>
+<meta name="description" content="Khan Hospital – World-class healthcare in Punjab, India. Advanced treatments, expert doctors, emergency care. Your Health, Our Priority.">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Three.js (replaces @react-three/fiber + drei) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- GSAP + ScrollTrigger (direct equivalent) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<!-- Lucide Icons (SVG inline, replaces lucide-react) -->
+
+<style>
+/* ── RESET & BASE ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --blue: #007BFF;
+  --blue-dark: #0056b3;
+  --green: #00C853;
+  --white: #FFFFFF;
+  --black: #000000;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #000;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── 3D BACKGROUND CANVAS (fixed, z-0) ── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── NAVIGATION ── glassmorphism floating pill ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  padding: 16px 24px;
+}
+.nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 9999px;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+.nav-logo {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-logo span { color: var(--blue); }
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ccc;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--green); }
+.nav-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.25s, transform 0.2s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-btn:hover { background: var(--blue-dark); transform: scale(1.04); }
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-logo { font-size: 18px; }
+}
+
+/* ── MAIN CONTENT (above canvas) ── */
+main { position: relative; z-index: 10; }
+
+/* ── HERO SECTION ── */
+#hero {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+}
+.hero-inner { max-width: 900px; }
+.hero-inner h1 {
+  font-size: clamp(42px, 8vw, 90px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin-bottom: 24px;
+  opacity: 0; /* animated in */
+  transform: scale(0.92);
+}
+.hero-inner h1 .gradient {
+  background: linear-gradient(90deg, var(--blue), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 20px;
+  color: #9ca3af;
+  letter-spacing: 0.02em;
+  margin-bottom: 40px;
+  opacity: 0;
+}
+
+/* Heartbeat SVG */
+.heartbeat-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+  opacity: 0.7;
+}
+.heartbeat-line {
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: drawHB 1.8s ease forwards, loopHB 2.4s 1.8s linear infinite;
+}
+@keyframes drawHB { to { stroke-dashoffset: 0; } }
+@keyframes loopHB { 0%{stroke-dashoffset:0} 50%{stroke-dashoffset:-500} 100%{stroke-dashoffset:-1000} }
+
+/* CTA buttons */
+.hero-btns {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  opacity: 0;
+}
+.btn-white {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+  text-decoration: none;
+}
+.btn-white:hover { transform: scale(1.05); }
+.btn-ghost {
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.20);
+  color: #fff;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.18); }
+.btn-ghost svg { flex-shrink: 0; }
+
+/* ── GSAP SECTION (base state for all animated sections) ── */
+.gsap-section { opacity: 0; transform: translateY(50px); }
+
+/* ── TREATMENTS SECTION ── */
+#treatments {
+  min-height: 100vh;
+  padding: 96px 24px;
+}
+.section-inner { max-width: 1280px; margin: 0 auto; }
+#treatments h2 {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+  margin-bottom: 64px;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 32px;
+}
+.dept-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 24px;
+  padding: 32px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: default;
+}
+.dept-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px rgba(0,123,255,0.15);
+}
+.dept-icon {
+  width: 56px; height: 56px;
+  background: rgba(0,123,255,0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--blue);
+}
+.dept-card h3 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.dept-card p { color: #9ca3af; line-height: 1.7; font-size: 15px; }
+
+/* ── APPOINTMENT SECTION ── */
+#appointment {
+  padding: 96px 24px;
+  background: linear-gradient(to bottom, transparent, rgba(0,123,255,0.10));
+}
+.appt-box {
+  max-width: 768px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 32px;
+  padding: 48px 40px;
+}
+.appt-box h2 {
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.appt-box .sub {
+  text-align: center;
+  color: #9ca3af;
+  margin-bottom: 40px;
+  font-size: 15px;
+}
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) { .form-grid-2 { grid-template-columns: 1fr; } }
+.form-field {
+  width: 100%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  -webkit-appearance: none;
+}
+.form-field::placeholder { color: #6b7280; }
+.form-field:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+}
+select.form-field { color: #6b7280; }
+select.form-field option { background: #111; color: #fff; }
+.form-field-full { width: 100%; margin-bottom: 20px; }
+.btn-submit {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  transition: background 0.25s, transform 0.2s;
+}
+.btn-submit:hover { background: var(--blue-dark); transform: translateY(-2px); }
+.form-success {
+  display: none;
+  text-align: center;
+  padding: 24px;
+  background: rgba(0,200,83,0.1);
+  border: 1px solid rgba(0,200,83,0.3);
+  border-radius: 14px;
+  margin-top: 16px;
+  font-size: 16px;
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid rgba(255,255,255,0.10);
+  background: #000;
+  padding: 80px 24px 40px;
+}
+.footer-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 48px;
+  margin-bottom: 64px;
+}
+.footer-brand h3 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 12px;
+}
+.footer-brand h3 span { color: var(--blue); }
+.footer-brand p { color: #6b7280; font-size: 14px; }
+.footer-col h4 {
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #fff;
+  font-size: 15px;
+}
+.footer-col p, .footer-col address {
+  color: #6b7280;
+  line-height: 1.9;
+  font-size: 14px;
+  font-style: normal;
+}
+.emergency-num {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+  margin-top: 4px;
+}
+.emergency-num svg { flex-shrink: 0; }
+.footer-bottom {
+  max-width: 1280px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255,255,255,0.10);
+  padding-top: 24px;
+  text-align: center;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(0,123,255,0.5); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ 3D BACKGROUND CANVAS ══════════════ -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ══════════════ NAVIGATION ══════════════ -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">KHAN <span>HOSPITAL</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#treatments">Treatments</a></li>
+      <li><a href="#emergency">Emergency</a></li>
+    </ul>
+    <a href="#appointment" class="nav-btn">
+      Book Appointment
+      <!-- ArrowRight icon -->
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main>
+
+  <!-- ── 1. HERO SECTION ── -->
+  <section id="hero">
+    <div class="hero-inner">
+      <h1 id="hero-title">
+        Advanced Healthcare<br>
+        <span class="gradient">For Your Family</span>
+      </h1>
+      <p class="hero-sub" id="hero-sub">
+        Your Health, Our Priority. World-class medical technology meets compassionate care.
+      </p>
+
+      <!-- SVG Heartbeat — direct equivalent of the React SVG animation -->
+      <div class="heartbeat-wrap">
+        <svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+          <path
+            class="heartbeat-line"
+            fill="none"
+            stroke="#00C853"
+            stroke-width="3"
+            stroke-dasharray="500"
+            stroke-dashoffset="500"
+            d="M 0 30 L 40 30 L 55 10 L 70 50 L 90 20 L 105 40 L 120 30 L 200 30"
+          />
+        </svg>
+      </div>
+
+      <div class="hero-btns" id="hero-btns">
+        <a href="#treatments" class="btn-white">Explore Services</a>
+        <a href="tel:+918699312781" class="btn-ghost">
+          <!-- Phone icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 8 8l1-1.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 23.73 17z"/></svg>
+          Emergency: +91 86993 12781
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 & 4. TREATMENTS / WORLD-CLASS SPECIALITIES ── -->
+  <section id="treatments" class="gsap-section">
+    <div class="section-inner">
+      <h2>World-Class Specialities</h2>
+      <div class="cards-grid">
+
+        <div class="dept-card">
+          <div class="dept-icon">
+            <!-- Activity icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Orthopedics</h3>
+          <p>Advanced robotics and minimally invasive procedures for rapid recovery and optimal outcomes.</p>
+        </div>
+
+        <div class="dept-card">
+          <div class="dept-icon">
+            <!-- HeartPulse icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
+          </div>
+          <h3>General Surgery</h3>
+          <p>Advanced robotics and minimally invasive procedures for rapid recovery and optimal outcomes.</p>
+        </div>
+
+        <div class="dept-card">
+          <div class="dept-icon">
+            <!-- ShieldAlert icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          </div>
+          <h3>Cardiology</h3>
+          <p>Advanced robotics and minimally invasive procedures for rapid recovery and optimal outcomes.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 8. APPOINTMENT BOOKING FORM ── -->
+  <section id="appointment" class="gsap-section">
+    <div class="appt-box">
+      <h2>Schedule a Visit</h2>
+      <p class="sub">Experience the future of healthcare today.</p>
+
+      <div id="appt-form-body">
+        <div class="form-grid-2">
+          <input id="f-name" type="text" placeholder="Full Name" class="form-field">
+          <input id="f-phone" type="tel" placeholder="Phone Number" class="form-field">
+        </div>
+        <div class="form-grid-2">
+          <input id="f-age" type="number" placeholder="Age" class="form-field">
+          <input id="f-date" type="date" class="form-field" style="color:#6b7280">
+        </div>
+        <select id="f-treatment" class="form-field form-field-full">
+          <option value="" disabled selected>Treatment Required</option>
+          <option value="ortho">Orthopedics</option>
+          <option value="general">General Checkup</option>
+          <option value="emergency">Emergency Care</option>
+        </select>
+
+        <button class="btn-submit" onclick="submitAppt()">
+          <!-- Calendar icon -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Request Appointment
+        </button>
+      </div>
+
+      <div class="form-success" id="form-success">
+        ✅ &nbsp; Appointment requested! Our team will call you to confirm.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 9 & 10. FOOTER & CONTACT ── -->
+  <footer class="gsap-section">
+    <div class="footer-grid">
+
+      <div class="footer-brand">
+        <h3>KHAN <span>HOSPITAL</span></h3>
+        <p>"Your Health, Our Priority"</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Location</h4>
+        <address>
+          Pind Rajiana<br>
+          Baghapurana<br>
+          District Moga<br>
+          Punjab, India
+        </address>
+      </div>
+
+      <div class="footer-col">
+        <h4>Emergency</h4>
+        <div class="emergency-num">
+          <!-- ShieldAlert icon -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00C853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <a href="tel:+918699312781" style="color:inherit;text-decoration:none">+91 86993 12781</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      © <span id="yr"></span> Khan Hospital. All rights reserved.
+    </div>
+  </footer>
+
+</main>
+
+<!-- ══════════════ JAVASCRIPT ══════════════ -->
+<script>
+// ── Year ──
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// ── Min date for appointment form ──
+(function(){
+  const d = document.getElementById('f-date');
+  if(d) d.min = new Date().toISOString().split('T')[0];
+})();
+
+// ── Form submit ──
+function submitAppt() {
+  const name = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const treatment = document.getElementById('f-treatment').value;
+  if (!name || !phone || !treatment) {
+    const box = document.querySelector('.appt-box');
+    gsap.to(box, { x: -8, duration: 0.08, yoyo: true, repeat: 6, ease: 'power2.inOut' });
+    return;
+  }
+  document.getElementById('appt-form-body').style.display = 'none';
+  const s = document.getElementById('form-success');
+  s.style.display = 'block';
+  gsap.fromTo(s, { opacity:0, scale:0.95 }, { opacity:1, scale:1, duration:0.5, ease:'back.out(1.4)' });
+}
+
+// ══════════════════════════════════════════
+// THREE.JS — replaces @react-three/fiber + drei
+// MedicalCross3D + Environment + Sparkles
+// ══════════════════════════════════════════
+(function initThree() {
+  const canvas = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 10);
+
+  // ── MeshTransmissionMaterial equivalent: glass-like MeshPhysicalMaterial ──
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x007BFF,
+    transmission: 0.9,
+    roughness: 0.1,
+    metalness: 0.1,
+    thickness: 2,
+    ior: 1.5,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide, // backside: true equivalent
+  });
+
+  // ── MedicalCross3D: vertical + horizontal bars ──
+  const crossGroup = new THREE.Group();
+  // vertical bar  args=[1, 3, 1]
+  const vBar = new THREE.Mesh(new THREE.BoxGeometry(1, 3, 1), glassMat);
+  // horizontal bar  args=[3, 1, 1]
+  const hBar = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 1), glassMat);
+  crossGroup.add(vBar);
+  crossGroup.add(hBar);
+  crossGroup.scale.setScalar(1.5); // scale={1.5}
+  scene.add(crossGroup);
+
+  // ── Sparkles (count=150, color="#00C853", opacity=0.6) ──
+  const sparkGeo = new THREE.BufferGeometry();
+  const sparkCount = 150;
+  const sparkPos = new Float32Array(sparkCount * 3);
+  for (let i = 0; i < sparkCount; i++) {
+    sparkPos[i * 3]     = (Math.random() - 0.5) * 10; // scale=10
+    sparkPos[i * 3 + 1] = (Math.random() - 0.5) * 10;
+    sparkPos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  }
+  sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+  const sparkMat = new THREE.PointsMaterial({
+    color: 0x00C853,
+    size: 0.08,      // size=4 in drei units → scaled down
+    transparent: true,
+    opacity: 0.6,
+  });
+  const sparks = new THREE.Points(sparkGeo, sparkMat);
+  scene.add(sparks);
+
+  // ── Lighting — ambientLight + directionalLight + pointLight ──
+  const ambLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambLight);
+
+  const dirLight = new THREE.DirectionalLight(0x007BFF, 1.5);
+  dirLight.position.set(10, 10, 5);
+  scene.add(dirLight);
+
+  const ptLight = new THREE.PointLight(0x00C853, 1, 50);
+  ptLight.position.set(-10, -10, -5);
+  scene.add(ptLight);
+
+  // ── Float equivalent: sinusoidal floating ──
+  // Float speed=2, rotationIntensity=0.5, floatIntensity=2
+  let clock = 0;
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener('mousemove', e => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    clock += 0.016;
+
+    // useFrame equivalent:
+    // rotation.y = elapsedTime * 0.5
+    // rotation.x = Math.sin(elapsedTime * 0.3) * 0.2
+    crossGroup.rotation.y = clock * 0.5 + mouseX * 0.25;
+    crossGroup.rotation.x = Math.sin(clock * 0.3) * 0.2 + mouseY * 0.15;
+
+    // Float floatIntensity=2 — vertical bob
+    crossGroup.position.y = Math.sin(clock * 2) * 0.18; // speed=2 → *2
+
+    // Sparkles slow rotation (speed=0.4)
+    sparks.rotation.y = clock * 0.4 * 0.15;
+    sparks.rotation.x = clock * 0.1;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+
+// ══════════════════════════════════════════
+// GSAP — direct port of useEffect animations
+// ══════════════════════════════════════════
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance (motion.div initial/animate equivalent)
+// initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ duration:1.2 }}
+gsap.fromTo('#hero-title',
+  { opacity: 0, scale: 0.9 },
+  { opacity: 1, scale: 1, duration: 1.2, ease: 'power3.out', delay: 0.2 }
+);
+gsap.fromTo('#hero-sub',
+  { opacity: 0, y: 20 },
+  { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.6 }
+);
+gsap.fromTo('#hero-btns',
+  { opacity: 0, y: 20 },
+  { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', delay: 1.0 }
+);
+
+// gsap.utils.toArray('.gsap-section') scroll animations
+// fromTo { opacity:0, y:50 } → { opacity:1, y:0, scrollTrigger: { start:'top 80%' } }
+gsap.utils.toArray('.gsap-section').forEach(function(section) {
+  gsap.fromTo(section,
+    { opacity: 0, y: 50 },
+    {
+      opacity: 1, y: 0,
+      duration: 1,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      }
+    }
+  );
+});
+
+// Note: the heartbeat strokeDashoffset animation is handled purely in CSS
+// (gsap.to('.heartbeat-line', { strokeDashoffset:0, duration:2, repeat:-1 }))
+// — the CSS @keyframes above is a 1:1 functional equivalent.
+</script>
+</body>
+</html>
